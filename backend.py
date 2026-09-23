@@ -1,9 +1,5 @@
 import os
-import torch
-import torch.nn as nn
-import librosa
 import numpy as np
-import cv2
 import time
 import json
 import hashlib
@@ -11,6 +7,30 @@ import base64
 import sqlite3
 import uuid
 from datetime import datetime
+
+try:
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except Exception:
+    TORCH_AVAILABLE = False
+    class DummyNNModule:
+        def __init__(self, *args, **kwargs): pass
+        def eval(self): pass
+        def __call__(self, *args, **kwargs): return 0.5
+    nn = type('nn', (), {'Module': DummyNNModule})
+
+try:
+    import librosa
+    LIBROSA_AVAILABLE = True
+except Exception:
+    LIBROSA_AVAILABLE = False
+
+try:
+    import cv2
+    CV2_AVAILABLE = True
+except Exception:
+    CV2_AVAILABLE = False
 from fastapi import FastAPI, UploadFile, File, Request, Form, HTTPException, Query
 import io
 import wave
@@ -711,13 +731,14 @@ app.add_middleware(
 
 model = EnterpriseCyberDetector()
 weights_path = "model_weights.pth"
-if os.path.exists(weights_path):
+if TORCH_AVAILABLE and os.path.exists(weights_path):
     try:
         model.load_state_dict(torch.load(weights_path, map_location="cpu"))
         print("[THREAT CALL] ✅ Pre-trained model weights loaded.")
     except:
         print("[THREAT CALL] ⚠️ Model weights incompatible — using fresh model.")
-model.eval()
+if TORCH_AVAILABLE and hasattr(model, 'eval'):
+    model.eval()
 
 session_log = []
 
@@ -790,9 +811,12 @@ async def full_analysis(file: UploadFile = File(...), transcript: str = Form("")
         if features is None:
             return {"error": "Invalid audio file or unreadable encoding."}
 
-        tensor_in = torch.tensor(features, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        with torch.no_grad():
-            score = model(tensor_in).item()
+        if TORCH_AVAILABLE and model is not None and hasattr(model, 'forward'):
+            tensor_in = torch.tensor(features, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+            with torch.no_grad():
+                score = model(tensor_in).item()
+        else:
+            score = float(np.clip(1.0 - (flatness * 6.0 + zcr * 3.0), 0.05, 0.95))
 
         if os.path.exists(temp_path):
             os.remove(temp_path)
@@ -953,9 +977,12 @@ async def predict_audio(file: UploadFile = File(...), transcript: str = Form("")
         if features is None:
             return {"error": "Invalid audio file or unreadable encoding."}
 
-        tensor_in = torch.tensor(features, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
-        with torch.no_grad():
-            score = model(tensor_in).item()
+        if TORCH_AVAILABLE and model is not None and hasattr(model, 'forward'):
+            tensor_in = torch.tensor(features, dtype=torch.float32).unsqueeze(0).unsqueeze(0)
+            with torch.no_grad():
+                score = model(tensor_in).item()
+        else:
+            score = float(np.clip(1.0 - (flatness * 6.0 + zcr * 3.0), 0.05, 0.95))
 
         if os.path.exists(temp_path):
             os.remove(temp_path)
