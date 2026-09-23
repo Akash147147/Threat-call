@@ -5,6 +5,7 @@ import json
 import hashlib
 import base64
 import sqlite3
+import tempfile
 import uuid
 from datetime import datetime
 
@@ -14,11 +15,7 @@ try:
     TORCH_AVAILABLE = True
 except Exception:
     TORCH_AVAILABLE = False
-    class DummyNNModule:
-        def __init__(self, *args, **kwargs): pass
-        def eval(self): pass
-        def __call__(self, *args, **kwargs): return 0.5
-    nn = type('nn', (), {'Module': DummyNNModule})
+    nn = None
 
 try:
     import librosa
@@ -41,7 +38,8 @@ from typing import Optional, List
 # ═══════════════════════════════════════════════════════════════════════════════
 # SQLITE PERSISTENT DATABASE — Attack Signatures + Audit + Intelligence
 # ═══════════════════════════════════════════════════════════════════════════════
-DB_FILE = "/tmp/threat_call.db" if os.environ.get("VERCEL") else "threat_call.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = "/tmp/threat_call.db" if os.environ.get("VERCEL") else os.path.join(BASE_DIR, "threat_call.db")
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -144,26 +142,31 @@ def find_similar_attacks(fingerprint, threshold=0.6):
 # ═══════════════════════════════════════════════════════════════════════════════
 # DEEP LEARNING MODEL: Enhanced CNN for Voice Synthesis Detection
 # ═══════════════════════════════════════════════════════════════════════════════
-class EnterpriseCyberDetector(nn.Module):
-    def __init__(self):
-        super(EnterpriseCyberDetector, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2, 2),
-            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2, 2),
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(128), nn.ReLU(), nn.MaxPool2d(2, 2),
-        )
-        self.attention = nn.Sequential(
-            nn.AdaptiveAvgPool2d((4, 4)), nn.Flatten(),
-            nn.Linear(128 * 4 * 4, 256), nn.ReLU(), nn.Dropout(0.4),
-            nn.Linear(256, 64), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(64, 1), nn.Sigmoid()
-        )
+if TORCH_AVAILABLE:
+    class EnterpriseCyberDetector(nn.Module):
+        def __init__(self):
+            super(EnterpriseCyberDetector, self).__init__()
+            self.conv = nn.Sequential(
+                nn.Conv2d(1, 32, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2, 2),
+                nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2, 2),
+                nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+                nn.BatchNorm2d(128), nn.ReLU(), nn.MaxPool2d(2, 2),
+            )
+            self.attention = nn.Sequential(
+                nn.AdaptiveAvgPool2d((4, 4)), nn.Flatten(),
+                nn.Linear(128 * 4 * 4, 256), nn.ReLU(), nn.Dropout(0.4),
+                nn.Linear(256, 64), nn.ReLU(), nn.Dropout(0.2),
+                nn.Linear(64, 1), nn.Sigmoid()
+            )
 
-    def forward(self, x):
-        return self.attention(self.conv(x))
+        def forward(self, x):
+            return self.attention(self.conv(x))
+else:
+    class EnterpriseCyberDetector:
+        def eval(self):
+            return self
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -730,7 +733,7 @@ app.add_middleware(
 )
 
 model = EnterpriseCyberDetector()
-weights_path = "model_weights.pth"
+weights_path = os.path.join(BASE_DIR, "model_weights.pth")
 if TORCH_AVAILABLE and os.path.exists(weights_path):
     try:
         model.load_state_dict(torch.load(weights_path, map_location="cpu"))
@@ -793,6 +796,10 @@ REMOTE_ACCESS_TOOLS = [
 # ═══════════════════════════════════════════════════════════════════════════════
 @app.get("/", response_class=HTMLResponse)
 async def home():
+    html_path = os.path.join(BASE_DIR, "frontend.html")
+    if os.path.exists(html_path):
+        with open(html_path, "r", encoding="utf-8") as f:
+            return f.read()
     if os.path.exists("frontend.html"):
         with open("frontend.html", "r", encoding="utf-8") as f:
             return f.read()
@@ -802,13 +809,16 @@ async def home():
 @app.post("/analyze")
 async def full_analysis(file: UploadFile = File(...), transcript: str = Form("")):
     """Master analysis endpoint — runs ALL engines and returns comprehensive results."""
-    temp_path = f"temp_{int(time.time())}_{file.filename}"
+    suffix = os.path.splitext(file.filename or "audio.wav")[1] or ".wav"
+    temp_fd, temp_path = tempfile.mkstemp(prefix="threat_call_", suffix=suffix)
+    os.close(temp_fd)
     try:
         with open(temp_path, "wb") as buffer:
             buffer.write(await file.read())
 
         features, flatness, zcr, roughness, mfcc_var, rolloff, pitch_std, centroid, bandwidth, hnr = analyze_audio_forensics(temp_path)
         if features is None:
+            os.remove(temp_path)
             return {"error": "Invalid audio file or unreadable encoding."}
 
         if TORCH_AVAILABLE and model is not None and hasattr(model, 'forward'):
@@ -835,7 +845,7 @@ async def full_analysis(file: UploadFile = File(...), transcript: str = Form("")
             min(mfcc_var * 2, 1.0) * 0.15 + min(rolloff * 2, 1.0) * 0.10 +
             (0.05 if pitch_std < 5.0 else 0.0)
         )
-        filename_lower = file.filename.lower()
+        filename_lower = (file.filename or "").lower()
         is_explicit_robot = any(k in filename_lower for k in ["robot", "fake", "clone", "spoof", "scam"])
         is_fake = is_explicit_robot or synthetic_index > 0.32
         voice_authenticity = max(0, 1.0 - synthetic_index)
@@ -968,13 +978,16 @@ async def analyze_transcript_only(transcript: str = Form("")):
 @app.post("/predict_audio")
 async def predict_audio(file: UploadFile = File(...), transcript: str = Form("")):
     """Legacy audio prediction endpoint — preserved for backward compatibility."""
-    temp_path = f"temp_{int(time.time())}_{file.filename}"
+    suffix = os.path.splitext(file.filename or "audio.wav")[1] or ".wav"
+    temp_fd, temp_path = tempfile.mkstemp(prefix="threat_call_", suffix=suffix)
+    os.close(temp_fd)
     try:
         with open(temp_path, "wb") as buffer:
             buffer.write(await file.read())
 
         features, flatness, zcr, roughness, mfcc_var, rolloff, pitch_std, centroid, bandwidth, hnr = analyze_audio_forensics(temp_path)
         if features is None:
+            os.remove(temp_path)
             return {"error": "Invalid audio file or unreadable encoding."}
 
         if TORCH_AVAILABLE and model is not None and hasattr(model, 'forward'):
@@ -997,7 +1010,7 @@ async def predict_audio(file: UploadFile = File(...), transcript: str = Form("")
             min(mfcc_var * 2, 1.0) * 0.15 + min(rolloff * 2, 1.0) * 0.10 +
             (0.05 if pitch_std < 5.0 else 0.0)
         )
-        filename_lower = file.filename.lower()
+        filename_lower = (file.filename or "").lower()
         is_explicit_robot = any(k in filename_lower for k in ["robot", "fake", "clone", "spoof", "scam"])
         is_robot_voice = is_explicit_robot or synthetic_index > 0.32
 
@@ -1246,8 +1259,8 @@ async def system_health():
         "status": "ONLINE",
         "platform": "THREAT CALL v3.0",
         "model": "EnterpriseCyberDetector + AttackDNA + TrustEngine + DeceptionChain",
-        "torch_version": torch.__version__,
-        "cuda_available": torch.cuda.is_available(),
+        "torch_version": torch.__version__ if TORCH_AVAILABLE else None,
+        "cuda_available": torch.cuda.is_available() if TORCH_AVAILABLE else False,
         "session_events": len(session_log),
         "db_persistent": os.path.exists(DB_FILE),
         "uptime": datetime.now().isoformat(),
