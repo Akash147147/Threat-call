@@ -41,7 +41,7 @@ from typing import Optional, List
 # ═══════════════════════════════════════════════════════════════════════════════
 # SQLITE PERSISTENT DATABASE — Attack Signatures + Audit + Intelligence
 # ═══════════════════════════════════════════════════════════════════════════════
-DB_FILE = "threat_call.db"
+DB_FILE = "/tmp/threat_call.db" if os.environ.get("VERCEL") else "threat_call.db"
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
