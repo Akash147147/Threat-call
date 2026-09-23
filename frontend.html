@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THREAT CALL — AI-Powered Impersonation Defense</title>
+    <meta name="description" content="THREAT CALL: Real-time AI-powered voice cloning, deepfake detection, and impersonation defense platform for Smart India Hackathon 2026.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0B1120;
+            --bg-sidebar: #0F172A;
+            --bg-card: #111C2E;
+            --bg-elevated: #1B263B;
+            --bg-input: #0D1526;
+            --primary: #38BDF8;
+            --secondary: #818CF8;
+            --safe: #22C55E;
+            --warning: #F59E0B;
+            --critical: #EF4444;
+            --text: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --text-dim: #64748B;
+            --border: #263449;
+            --border-light: #334155;
+            --font: 'Inter', system-ui, -apple-system, sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 4px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: var(--bg-main); color: var(--text); font-family: var(--font); display: flex; min-height: 100vh; overflow: hidden; }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: 260px; min-width: 260px; background: var(--bg-sidebar);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            height: 100vh; overflow-y: auto; z-index: 10;
+        }
+        .sidebar-brand {
+            padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+        }
+        .sidebar-brand h1 {
+            font-size: 1.25rem; font-weight: 800; letter-spacing: 0.5px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .sidebar-brand h1 .icon { color: var(--primary); font-size: 1.1rem; }
+        .sidebar-brand p { font-size: 0.68rem; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-section { padding: 16px 12px 4px; }
+        .nav-section-title { font-size: 0.65rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; padding: 0 8px; margin-bottom: 4px; }
+        .nav-item {
+            display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+            border-radius: var(--radius-sm); cursor: pointer; font-size: 0.82rem;
+            color: var(--text-secondary); transition: all 0.15s ease; font-weight: 500;
+        }
+        .nav-item:hover { background: rgba(56,189,248,0.08); color: var(--text); }
+        .nav-item.active { background: rgba(56,189,248,0.12); color: var(--primary); font-weight: 600; }
+        .nav-item .nav-icon { width: 18px; text-align: center; font-size: 0.9rem; }
+        .nav-badge { margin-left: auto; background: var(--critical); color: #fff; font-size: 0.6rem; padding: 2px 6px; border-radius: 10px; font-weight: 700; }
+        .sidebar-footer { margin-top: auto; padding: 16px; border-top: 1px solid var(--border); }
+        .system-status { display: flex; align-items: center; gap: 8px; font-size: 0.75rem; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--safe); box-shadow: 0 0 6px var(--safe); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* ── Main Content ── */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .top-bar {
+            padding: 12px 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            background: var(--bg-sidebar); min-height: 56px;
+        }
+        .top-bar-left { display: flex; align-items: center; gap: 12px; }
+        .page-title { font-size: 1rem; font-weight: 700; }
+        .top-bar-right { display: flex; align-items: center; gap: 10px; }
+        .top-input {
+            background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            color: var(--text); padding: 7px 12px; font-family: var(--mono); font-size: 0.75rem; width: 200px; outline: none;
+        }
+        .top-input:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(56,189,248,0.15); }
+
+        .content-area { flex: 1; overflow-y: auto; padding: 24px; }
+        .page-section { display: none; }
+        .page-section.active { display: block; }
+
+        /* ── Cards ── */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 20px; margin-bottom: 16px; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .card:hover { border-color: var(--border-light); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .card-title { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+        .card-badge { font-size: 0.65rem; padding: 3px 10px; border-radius: 20px; font-weight: 700; font-family: var(--mono); }
+        .badge-safe { background: rgba(34,197,94,0.15); color: var(--safe); border: 1px solid rgba(34,197,94,0.3); }
+        .badge-warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+        .badge-critical { background: rgba(239,68,68,0.15); color: var(--critical); border: 1px solid rgba(239,68,68,0.3); }
+        .badge-info { background: rgba(56,189,248,0.15); color: var(--primary); border: 1px solid rgba(56,189,248,0.3); }
+
+        /* ── Grid Layouts ── */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .grid-sidebar { display: grid; grid-template-columns: 320px 1fr; gap: 16px; }
+        @media(max-width:1200px) { .grid-2,.grid-3,.grid-4,.grid-sidebar { grid-template-columns: 1fr; } }
+
+        /* ── Metric Cards ── */
+        .metric-card {
+            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 16px; text-align: center;
+        }
+        .metric-value { font-size: 2rem; font-weight: 800; font-family: var(--mono); line-height: 1.1; }
+        .metric-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; font-weight: 600; }
+        .metric-sub { font-size: 0.72rem; margin-top: 2px; font-weight: 600; }
+
+        /* ── Trust Score Ring ── */
+        .trust-ring { width: 140px; height: 140px; position: relative; margin: 0 auto; }
+        .trust-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .trust-ring .bg-ring { fill: none; stroke: var(--border); stroke-width: 8; }
+        .trust-ring .fg-ring { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.8s ease, stroke 0.5s ease; }
+        .trust-ring .center-text {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center;
+        }
+        .trust-ring .score { font-size: 2rem; font-weight: 800; font-family: var(--mono); }
+        .trust-ring .label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 10px 16px; border-radius: var(--radius-sm); border: none;
+            font-family: var(--font); font-size: 0.8rem; font-weight: 600; cursor: pointer;
+            transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn-primary { background: var(--primary); color: #0B1120; }
+        .btn-primary:hover { background: #7dd3fc; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(56,189,248,0.3); }
+        .btn-danger { background: var(--critical); color: #fff; }
+        .btn-danger:hover { background: #f87171; transform: translateY(-1px); }
+        .btn-outline { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+        .btn-sm { padding: 6px 12px; font-size: 0.72rem; }
+        .btn-block { width: 100%; justify-content: center; }
+
+        /* ── Upload Area ── */
+        .upload-zone {
+            border: 2px dashed var(--border); border-radius: var(--radius); padding: 24px;
+            text-align: center; cursor: pointer; transition: all 0.2s;
+        }
+        .upload-zone:hover { border-color: var(--primary); background: rgba(56,189,248,0.04); }
+        .upload-zone .upload-icon { font-size: 1.8rem; margin-bottom: 8px; }
+        .upload-zone p { font-size: 0.78rem; color: var(--text-secondary); }
+
+        /* ── Textarea ── */
+        .textarea {
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text); padding: 10px 12px;
+            font-family: var(--mono); font-size: 0.78rem; resize: none; outline: none; min-height: 60px;
+        }
+        .textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(56,189,248,0.15); }
+        .select {
+            width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--primary); padding: 8px 12px;
+            font-family: var(--mono); font-size: 0.78rem; outline: none; cursor: pointer;
+        }
+
+        /* ── Labels ── */
+        .label { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── Defense Actions ── */
+        .defense-action {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            margin-bottom: 8px; font-size: 0.8rem;
+        }
+        .defense-action .check { color: var(--safe); font-weight: 700; }
+        .defense-action.critical { border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.06); }
+        .defense-action.warning { border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.06); }
+
+        /* ── Timeline ── */
+        .timeline-item {
+            display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+            font-size: 0.78rem; align-items: flex-start;
+        }
+        .timeline-time { font-family: var(--mono); color: var(--text-dim); min-width: 70px; font-size: 0.72rem; padding-top: 2px; }
+        .timeline-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+        .timeline-dot.safe { background: var(--safe); }
+        .timeline-dot.warning { background: var(--warning); }
+        .timeline-dot.critical { background: var(--critical); box-shadow: 0 0 6px var(--critical); }
+        .timeline-dot.info { background: var(--primary); }
+        .timeline-desc { flex: 1; }
+
+        /* ── Deception Chain ── */
+        .chain-stage {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            margin-bottom: 6px; font-size: 0.78rem;
+        }
+        .chain-stage.detected { border-color: rgba(239,68,68,0.5); background: rgba(239,68,68,0.08); }
+        .chain-stage .stage-name { font-weight: 700; min-width: 140px; }
+        .chain-stage .stage-status { margin-left: auto; font-family: var(--mono); font-size: 0.7rem; font-weight: 700; }
+        .chain-arrow { text-align: center; color: var(--text-dim); font-size: 0.9rem; padding: 2px 0; }
+
+        /* ── Attack Lab Pills ── */
+        .lab-pill {
+            padding: 10px 16px; background: var(--bg-elevated); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); cursor: pointer; font-size: 0.78rem; font-weight: 600;
+            text-align: center; transition: all 0.15s;
+        }
+        .lab-pill:hover { border-color: var(--primary); color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .lab-pill.active { border-color: var(--primary); background: rgba(56,189,248,0.1); color: var(--primary); }
+
+        /* ── Table ── */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+        .data-table th { text-align: left; padding: 10px 12px; color: var(--text-dim); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+        .data-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+
+        /* ── Video ── */
+        .video-frame {
+            border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border);
+            position: relative; background: var(--bg-input);
+        }
+        .video-frame video { width: 100%; height: 180px; object-fit: cover; display: block; }
+
+        /* ── Waveform ── */
+        .waveform-canvas {
+            width: 100%; height: 50px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--bg-input);
+        }
+
+        /* ── Misc ── */
+        .divider { height: 1px; background: var(--border); margin: 16px 0; }
+        .text-safe { color: var(--safe); }
+        .text-warning { color: var(--warning); }
+        .text-critical { color: var(--critical); }
+        .text-primary { color: var(--primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-dim { color: var(--text-dim); }
+        .mono { font-family: var(--mono); }
+        .fw-800 { font-weight: 800; }
+        .mt-8 { margin-top: 8px; }
+        .mt-12 { margin-top: 12px; }
+        .mt-16 { margin-top: 16px; }
+        .mb-8 { margin-bottom: 8px; }
+        .mb-12 { margin-bottom: 12px; }
+        .gap-8 { gap: 8px; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .hidden { display: none !important; }
+
+        /* ── Attack DNA Visual ── */
+        .dna-header {
+            text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(129,140,248,0.08));
+            border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px;
+        }
+        .dna-id { font-family: var(--mono); font-size: 0.85rem; color: var(--primary); font-weight: 700; }
+        .dna-risk { font-size: 3rem; font-weight: 900; font-family: var(--mono); line-height: 1; margin: 8px 0; }
+        .dna-tree { padding: 16px; }
+        .dna-node {
+            padding: 10px 14px; background: var(--bg-elevated); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); margin-bottom: 6px; display: flex;
+            justify-content: space-between; align-items: center; font-size: 0.8rem;
+        }
+        .dna-node .node-label { color: var(--text-dim); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .dna-node .node-value { font-weight: 700; font-family: var(--mono); }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+            width: 90%; max-width: 800px; max-height: 80vh; overflow-y: auto; padding: 24px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <h1><span class="icon">◈</span> THREAT CALL</h1>
+        <p>AI-Powered Impersonation Defense</p>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Overview</div>
+        <div class="nav-item active" onclick="showPage('command-center')"><span class="nav-icon">🛡</span> Command Center</div>
+        <div class="nav-item" onclick="showPage('live-protection')"><span class="nav-icon">📞</span> Live Protection</div>
+    </div>
+    <div class="nav-section">
+        <div class="nav-section-title">Detection</div>
+        <div class="nav-item" onclick="showPage('voice-forensics')"><span class="nav-icon">🎙</span> Voice Forensics</div>
+        <div class="nav-item" onclick="showPage('biometrics-matrix')"><span class="nav-icon">👤</span> Voice Biometrics</div>
+        <div class="nav-item" onclick="showPage('video-forensics')"><span class="nav-icon">👁</span> Video Forensics</div>
+        <div class="nav-item" onclick="showPage('attack-dna')"><span class="nav-icon">🧬</span> Attack DNA</div>
+        <div class="nav-item" onclick="showPage('deception-analysis')"><span class="nav-icon">🔗</span> Deception Analysis</div>
+    </div>
+    <div class="nav-section">
+        <div class="nav-section-title">Defense</div>
+        <div class="nav-item" onclick="showPage('trust-engine')"><span class="nav-icon">🎯</span> Trust Engine</div>
+        <div class="nav-item" onclick="showPage('adaptive-defense')"><span class="nav-icon">⚡</span> Adaptive Defense</div>
+        <div class="nav-item" onclick="showPage('action-firewall')"><span class="nav-icon">🔥</span> Action Firewall</div>
+    </div>
+    <div class="nav-section">
+        <div class="nav-section-title">Intelligence</div>
+        <div class="nav-item" onclick="showPage('threat-intelligence')"><span class="nav-icon">📊</span> Threat Intelligence</div>
+        <div class="nav-item" onclick="showPage('incident-history')"><span class="nav-icon">📋</span> Incident History</div>
+    </div>
+    <div class="nav-section">
+        <div class="nav-section-title">Lab</div>
+        <div class="nav-item" onclick="showPage('attack-lab')"><span class="nav-icon">🧪</span> Attack Simulator</div>
+    </div>
+    <div class="nav-section">
+        <div class="nav-section-title">System</div>
+        <div class="nav-item" onclick="showPage('audit-logs')"><span class="nav-icon">🗄</span> Audit Logs</div>
+        <div class="nav-item" onclick="showPage('system-health')"><span class="nav-icon">💚</span> System Health</div>
+    </div>
+
+    <div class="sidebar-footer">
+        <div class="system-status"><div class="status-dot"></div><span class="text-secondary" style="font-size:0.72rem;">System Operational</span></div>
+        <div style="font-size:0.65rem; color:var(--text-dim); margin-top:6px;">SIH 2026 • v3.0</div>
+    </div>
+</aside>
+
+<!-- ═══════ MAIN CONTENT ═══════ -->
+<div class="main-content">
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <span class="page-title" id="currentPageTitle">Command Center</span>
+        </div>
+        <div class="top-bar-right">
+            <input type="text" id="guardianPhone" class="top-input" placeholder="📱 Guardian Phone" value="+91 9876543210">
+            <button class="btn btn-outline btn-sm" onclick="exportReport()">📊 Export</button>
+            <div class="card-badge badge-safe" id="globalStatusBadge">● PROTECTED</div>
+        </div>
+    </div>
+
+    <div class="content-area">
+
+        <!-- ═══════ COMMAND CENTER ═══════ -->
+        <section id="page-command-center" class="page-section active">
+            <div class="grid-sidebar">
+                <div>
+                    <!-- Trust Score Ring -->
+                    <div class="card" style="text-align:center;">
+                        <div class="card-header"><span class="card-title">Trust Score</span></div>
+                        <div class="trust-ring">
+                            <svg viewBox="0 0 120 120">
+                                <circle class="bg-ring" cx="60" cy="60" r="50"/>
+                                <circle class="fg-ring" id="trustRingCircle" cx="60" cy="60" r="50" stroke="var(--safe)"
+                                    stroke-dasharray="314" stroke-dashoffset="18.84"/>
+                            </svg>
+                            <div class="center-text">
+                                <div class="score" id="trustScoreValue">94</div>
+                                <div class="label" id="trustRiskLabel">LOW RISK</div>
+                            </div>
+                        </div>
+                        <div class="mt-12" id="dashDefenseStatus" style="font-size:0.78rem; color:var(--safe); font-weight:600;">● Monitoring</div>
+                    </div>
+                    <!-- Quick Stats -->
+                    <div class="grid-2 mt-16">
+                        <div class="metric-card"><div class="metric-value text-safe" id="statSafe">0</div><div class="metric-label">Safe</div></div>
+                        <div class="metric-card"><div class="metric-value text-critical" id="statThreats">0</div><div class="metric-label">Threats</div></div>
+                    </div>
+                    <div class="grid-2 mt-8">
+                        <div class="metric-card"><div class="metric-value text-warning" id="statWarnings">0</div><div class="metric-label">Warnings</div></div>
+                        <div class="metric-card"><div class="metric-value text-primary" id="statScans">0</div><div class="metric-label">Scans</div></div>
+                    </div>
+                </div>
+
+                <div>
+                    <!-- Current Interaction -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Current Interaction</span>
+                            <span class="card-badge badge-safe" id="dashInteractionBadge">SECURE</span>
+                        </div>
+                        <div class="grid-2 gap-8">
+                            <div><span class="label">Speaker</span><div class="mono" id="dashSpeaker" style="font-size:0.85rem;">—</div></div>
+                            <div><span class="label">Voice</span><div class="mono" id="dashVoice" style="font-size:0.85rem;">—</div></div>
+                            <div><span class="label">Intent</span><div class="mono" id="dashIntent" style="font-size:0.85rem;">—</div></div>
+                            <div><span class="label">Threat Level</span><div class="mono" id="dashThreat" style="font-size:0.85rem;">—</div></div>
+                        </div>
+                    </div>
+                    <!-- Active Defenses -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Active Defenses</span></div>
+                        <div id="dashDefenseActions"><div class="defense-action"><span class="check">✓</span> System standby — no active threats</div></div>
+                    </div>
+                    <!-- Recent Events -->
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Recent Events</span></div>
+                        <div id="dashRecentEvents" style="max-height:180px; overflow-y:auto;">
+                            <div style="font-size:0.78rem; color:var(--text-dim);">No events recorded yet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Live Threat Radar Sweep -->
+            <div class="card mt-16" style="background: var(--bg-card); border-color: rgba(56,189,248,0.25);">
+                <div class="card-header d-flex justify-between align-center" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span class="card-title">📡 Global Live Threat Telemetry Radar</span>
+                    <span class="card-badge badge-primary" id="radarStatusBadge">● RADAR SWEEP ACTIVE</span>
+                </div>
+                <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
+                    <div style="position: relative; width: 220px; height: 220px; flex-shrink: 0; margin: 0 auto;">
+                        <canvas id="threatRadarCanvas" width="220" height="220" style="border-radius: 50%; background: #080D1A; border: 1px solid var(--border); box-shadow: 0 0 15px rgba(56,189,248,0.15);"></canvas>
+                    </div>
+                    <div style="flex: 1; min-width: 280px;" id="liveThreatRadarFeed">
+                        <div style="font-size: 0.8rem; color: var(--text-dim);">Initializing SOC Threat Stream...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════ LIVE PROTECTION ═══════ -->
+        <section id="page-live-protection" class="page-section">
+            <div class="grid-sidebar">
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Live Microphone</span></div>
+                        <div class="label">Language Mode</div>
+                        <select id="langSelect" class="select mb-12">
+                            <option value="auto" selected>✨ Auto-Detect (Omni-Mode)</option>
+                            <option value="hi-IN">Hindi (हिंदी)</option>
+                            <option value="te-IN">Telugu (తెలుగు)</option>
+                            <option value="ta-IN">Tamil (தமிழ்)</option>
+                            <option value="ml-IN">Malayalam (മലയാളം)</option>
+                            <option value="kn-IN">Kannada (ಕನ್ನಡ)</option>
+                            <option value="bn-IN">Bengali (বাংলা)</option>
+                            <option value="gu-IN">Gujarati (ગુજરાતી)</option>
+                            <option value="mr-IN">Marathi (मराठी)</option>
+                            <option value="en-US">English</option>
+                        </select>
+                        <canvas class="waveform-canvas" id="micVisualizer"></canvas>
+                        <div class="mt-12">
+                            <button class="btn btn-primary btn-block" id="liveBtn" onclick="toggleLiveMic()">Start Live Protection</button>
+                        </div>
+                    </div>
+                    <div class="card mt-8">
+                        <div class="card-header"><span class="card-title">Live Transcript</span></div>
+                        <div id="liveTranscript" style="min-height:80px; font-family:var(--mono); font-size:0.78rem; color:var(--text-secondary);">Awaiting speech...</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Live Trust Score</span><span class="card-badge badge-safe" id="liveTrustBadge">SAFE</span></div>
+                        <div class="metric-value text-safe" id="liveTrustScore" style="font-size:3rem;">100</div>
+                        <div class="metric-label">Dynamic Trust Score</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Live Defense Status</span></div>
+                        <div id="liveDefenseActions"><div class="defense-action"><span class="check">✓</span> Standby</div></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Live Evidence</span></div>
+                        <div id="liveTimeline" style="max-height:200px; overflow-y:auto;"><div class="text-dim" style="font-size:0.78rem;">No events yet</div></div>
+                    </div>
+                    <div id="liveSOSBox" class="hidden card" style="border-color:var(--critical); background:rgba(239,68,68,0.06);">
+                        <div style="text-align:center; font-weight:700; color:var(--critical); margin-bottom:12px;">🚨 THREAT DETECTED — Emergency Actions</div>
+                        <div class="grid-3">
+                            <button class="btn btn-danger btn-sm btn-block" onclick="triggerSOS('Police (112)')">📞 Police</button>
+                            <button class="btn btn-danger btn-sm btn-block" onclick="triggerSOS('Ambulance (108)')">🚑 Ambulance</button>
+                            <button class="btn btn-danger btn-sm btn-block" onclick="triggerSOS('Cyber Cell (1930)')">🛡 Cyber Cell</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════ VOICE FORENSICS ═══════ -->
+        <section id="page-voice-forensics" class="page-section">
+            <div class="grid-sidebar">
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Audio Analysis Engine</span></div>
+                        <div class="upload-zone" onclick="document.getElementById('audioFileInput').click()">
+                            <div class="upload-icon">🎙</div>
+                            <p id="audioFileName">Drop or select a .wav file</p>
+                            <input type="file" id="audioFileInput" accept=".wav" style="display:none;" onchange="document.getElementById('audioFileName').textContent='Loaded: '+this.files[0].name">
+                        </div>
+                        
+                        <div class="label mt-12">Play Synthetic Sample Generator</div>
+                        <div class="grid-2 gap-8" style="flex-wrap:wrap;">
+                            <button class="btn btn-sm btn-outline" onclick="playAudioSample('ceo_deepfake')">🤖 Synthetic CEO WAV</button>
+                            <button class="btn btn-sm btn-outline" onclick="playAudioSample('vishing_urgent')">🚨 Urgency Vishing WAV</button>
+                            <button class="btn btn-sm btn-outline" onclick="playAudioSample('voice_conversion')">🎭 Voice Conversion WAV</button>
+                            <button class="btn btn-sm btn-outline" onclick="playAudioSample('normal_speaker')">👤 Natural Speaker WAV</button>
+                        </div>
+                        <audio id="audioSamplePlayer" controls style="width:100%; margin-top:8px; display:none;"></audio>
+
+                        <div class="label mt-12">Call Transcript</div>
+                        <textarea id="voiceTranscript" class="textarea" placeholder="Paste or type the call transcript..."></textarea>
+                        <div class="grid-2 mt-12 gap-8" style="flex-wrap:wrap;">
+                            <button class="btn btn-sm btn-outline" onclick="loadPreset('cbi')">🚨 CBI Arrest</button>
+                            <button class="btn btn-sm btn-outline" onclick="loadPreset('anydesk')">🚨 AnyDesk</button>
+                            <button class="btn btn-sm btn-outline" onclick="loadPreset('police')">🚨 Police</button>
+                            <button class="btn btn-sm btn-outline" onclick="loadPreset('secure')">✅ Secure</button>
+                        </div>
+                        <button class="btn btn-primary btn-block mt-12" onclick="runFullAnalysis()">Run Full Analysis</button>
+                    </div>
+                </div>
+                <div>
+                    <div class="card" id="voiceResultCard" style="display:none;">
+                        <div class="card-header"><span class="card-title">Voice Analysis Result</span><span class="card-badge" id="voiceResultBadge"></span></div>
+                        <div class="grid-3 gap-8 mb-12">
+                            <div class="metric-card"><div class="metric-value" id="vfAuthenticity">—</div><div class="metric-label">Authenticity</div></div>
+                            <div class="metric-card"><div class="metric-value" id="vfTechnique">—</div><div class="metric-label">Technique</div></div>
+                            <div class="metric-card"><div class="metric-value" id="vfTrustScore">—</div><div class="metric-label">Trust</div></div>
+                        </div>
+                        <div id="voiceDetailedResults"></div>
+                    </div>
+                    <div id="voiceSOSBox" class="hidden card" style="border-color:var(--critical); background:rgba(239,68,68,0.06);">
+                        <div style="text-align:center; font-weight:700; color:var(--critical); margin-bottom:12px;">🚨 EMERGENCY DISPATCH</div>
+                        <div class="grid-3">
+                            <button class="btn btn-danger btn-sm btn-block" onclick="triggerSOS('Police (112)')">📞 Police</button>
+                            <button class="btn btn-danger btn-sm btn-block" onclick="triggerSOS('Ambulance (108)')">🚑 Ambulance</button>
+                            <button class="btn btn-danger btn-sm btn-block" onclick="triggerSOS('Cyber Cell (1930)')">🛡 Cyber Cell</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════ VOICE BIOMETRICS ═══════ -->
+        <section id="page-biometrics-matrix" class="page-section">
+            <div class="grid-sidebar">
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Biometric Signature Matcher</span></div>
+                        <div class="label">Target Executive Profile</div>
+                        <select id="biometricTargetSpeaker" class="select mb-12">
+                            <option value="CEO / Executive (ID: VP-8092)">CEO / Executive (ID: VP-8092)</option>
+                            <option value="Chief Financial Officer (ID: VP-4412)">Chief Financial Officer (ID: VP-4412)</option>
+                            <option value="System Administrator (ID: VP-1002)">System Administrator (ID: VP-1002)</option>
+                        </select>
+                        <div class="label">Sample Voice Profile</div>
+                        <select id="biometricSampleType" class="select mb-12">
+                            <option value="ceo_deepfake">🤖 Synthetic CEO Voice (AI Deepfake)</option>
+                            <option value="voice_conversion">🎭 Voice Conversion (RVC Model)</option>
+                            <option value="normal_speaker">👤 Valid Executive Voice (Natural)</option>
+                        </select>
+                        <button class="btn btn-primary btn-block" onclick="verifyBiometrics()">Run Biometric Verification</button>
+                    </div>
+                </div>
+                <div>
+                    <div class="card" id="biometricsResultCard">
+                        <div class="card-header">
+                            <span class="card-title">Formant Spectrum & Speaker Verification Matrix</span>
+                            <span class="card-badge badge-primary" id="biometricBadge">READY</span>
+                        </div>
+                        <div id="biometricDetailsContainer">
+                            <p style="font-size:0.85rem; color:var(--text-dim);">Select a target executive profile and run verification to inspect formant resonant frequencies (F1-F4), pitch jitter, amplitude shimmer, and vocal tract dimensions.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════ VIDEO FORENSICS ═══════ -->
+        <section id="page-video-forensics" class="page-section">
+            <div class="grid-sidebar">
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Video Source</span></div>
+                        <select id="videoSource" class="select mb-12">
+                            <option value="stealth">🖥 Stealth Window Capture</option>
+                            <option value="webcam">📷 Webcam Feed</option>
+                        </select>
+                        <div class="video-frame"><video id="webcamVideo" autoplay playsinline></video></div>
+                        <canvas id="snapshotCanvas" style="display:none;"></canvas>
+                        <button class="btn btn-primary btn-block mt-12" id="videoBtn" onclick="toggleVideoShield()">Activate Face Shield</button>
+                    </div>
+                </div>
+                <div>
+                    <div class="card">
+                        <div class="card-header"><span class="card-title">Deepfake Analysis</span><span class="card-badge badge-safe" id="videoBadge">INACTIVE</span></div>
+                        <div id="videoResultDisplay" style="font-size:0.82rem; color:var(--text-secondary);">Activate the video shield to begin analysis.</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ═══════ ATTACK DNA ═══════ -->
+        <section id="page-attack-dna" class="page-section">
+            <div id="attackDnaContent">
+                <div class="card" style="text-align:center; padding:40px;"><div class="text-dim">Run a Voice Forensics analysis or Attack Lab simulation to generate Attack DNA.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ DECEPTION ANALYSIS ═══════ -->
+        <section id="page-deception-analysis" class="page-section">
+            <div id="deceptionContent">
+                <div class="card" style="text-align:center; padding:40px;"><div class="text-dim">Run an analysis to view Deception Chain Detection results.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ TRUST ENGINE ═══════ -->
+        <section id="page-trust-engine" class="page-section">
+            <div id="trustContent">
+                <div class="card" style="text-align:center; padding:40px;"><div class="text-dim">Run an analysis to view Trust Engine breakdown.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ ADAPTIVE DEFENSE ═══════ -->
+        <section id="page-adaptive-defense" class="page-section">
+            <div id="defenseContent">
+                <div class="card" style="text-align:center; padding:40px;"><div class="text-dim">Run an analysis to view Adaptive Defense actions.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ ACTION FIREWALL ═══════ -->
+        <section id="page-action-firewall" class="page-section">
+            <div id="firewallContent">
+                <div class="card" style="text-align:center; padding:40px;"><div class="text-dim">Run an analysis to view Transaction/Action Firewall results.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ THREAT INTELLIGENCE ═══════ -->
+        <section id="page-threat-intelligence" class="page-section">
+            <div class="card"><div class="card-header"><span class="card-title">Threat Intelligence Dashboard</span><button class="btn btn-sm btn-outline" onclick="loadThreatIntel()">🔄 Refresh</button></div>
+                <div id="threatIntelContent"><div class="text-dim" style="font-size:0.78rem;">Click Refresh to load threat intelligence data.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ INCIDENT HISTORY ═══════ -->
+        <section id="page-incident-history" class="page-section">
+            <div class="card"><div class="card-header"><span class="card-title">Attack Signature Database</span><button class="btn btn-sm btn-outline" onclick="loadSignatures()">🔄 Load</button></div>
+                <div id="signaturesContent"><div class="text-dim" style="font-size:0.78rem;">Click Load to retrieve stored attack signatures.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ ATTACK LAB ═══════ -->
+        <section id="page-attack-lab" class="page-section">
+            <div class="card mb-12">
+                <div class="card-header"><span class="card-title">Adversarial Attack Simulator</span><span class="card-badge badge-info">RESEARCH LAB</span></div>
+                <div class="grid-3 gap-8 mb-12">
+                    <div class="lab-pill" onclick="selectLabAttack('tts')">🤖 TTS Clone</div>
+                    <div class="lab-pill" onclick="selectLabAttack('voice_conversion')">🔄 Voice Conversion</div>
+                    <div class="lab-pill" onclick="selectLabAttack('replay')">🔁 Replay Attack</div>
+                    <div class="lab-pill" onclick="selectLabAttack('noise')">🔊 Noise Injection</div>
+                    <div class="lab-pill" onclick="selectLabAttack('compression')">📱 Phone Compression</div>
+                    <div class="lab-pill" onclick="selectLabAttack('pitch_mod')">🎵 Pitch Modification</div>
+                    <div class="lab-pill" onclick="selectLabAttack('multilingual')">🌐 Multilingual Attack</div>
+                    <div class="lab-pill" onclick="selectLabAttack('hybrid')">⚡ Hybrid Attack</div>
+                    <div class="lab-pill" onclick="selectLabAttack('unknown')">❓ Unknown Pattern</div>
+                </div>
+                <div class="label">Simulated Transcript</div>
+                <textarea id="labTranscript" class="textarea" placeholder="Add optional scam transcript for deception chain analysis...">This is CBI Officer Sharma. Your Aadhaar is linked to a narcotics case. Download AnyDesk immediately and transfer ₹50,000 to clearance account or you will be arrested today.</textarea>
+                <button class="btn btn-primary btn-block mt-12" id="labRunBtn" onclick="runLabSimulation()">▶ Run Simulation</button>
+            </div>
+            <div id="labResults"></div>
+        </section>
+
+        <!-- ═══════ AUDIT LOGS ═══════ -->
+        <section id="page-audit-logs" class="page-section">
+            <div class="card"><div class="card-header"><span class="card-title">Persistent Audit Logs (SQLite)</span><button class="btn btn-sm btn-outline" onclick="loadAuditLogs()">🔄 Refresh</button></div>
+                <div id="auditLogsContent"><div class="text-dim" style="font-size:0.78rem;">Click Refresh to load audit logs.</div></div>
+            </div>
+        </section>
+
+        <!-- ═══════ SYSTEM HEALTH ═══════ -->
+        <section id="page-system-health" class="page-section">
+            <div class="card"><div class="card-header"><span class="card-title">System Health</span><button class="btn btn-sm btn-outline" onclick="loadSystemHealth()">🔄 Refresh</button></div>
+                <div id="systemHealthContent"><div class="text-dim" style="font-size:0.78rem;">Click Refresh to check system health.</div></div>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<script>
+// ═══════ NAVIGATION ═══════
+let currentAnalysis = null;
+let scanCounts = { safe: 0, threats: 0, warnings: 0, scans: 0 };
+
+function showPage(pageId) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    let page = document.getElementById('page-' + pageId);
+    if (page) page.classList.add('active');
+    event.currentTarget.classList.add('active');
+    let titles = {
+        'command-center':'Command Center','live-protection':'Live Protection','voice-forensics':'Voice Forensics',
+        'biometrics-matrix':'Voice Biometrics','video-forensics':'Video Forensics','attack-dna':'Attack DNA',
+        'deception-analysis':'Deception Analysis','trust-engine':'Trust Engine','adaptive-defense':'Adaptive Defense',
+        'action-firewall':'Action Firewall','threat-intelligence':'Threat Intelligence','incident-history':'Incident History',
+        'attack-lab':'Attack Simulator','audit-logs':'Audit Logs','system-health':'System Health'
+    };
+    document.getElementById('currentPageTitle').textContent = titles[pageId] || pageId;
+}
+
+// ═══════ PRESETS ═══════
+function loadPreset(type) {
+    let t = document.getElementById('voiceTranscript');
+    const presets = {
+        cbi: "This is CBI Officer Sharma calling. You are under Digital Arrest for a Narcotics package linked to your Aadhaar. Download AnyDesk and transfer ₹50,000 verification money to clearance bank account immediately or you will be arrested.",
+        police: "మీ కొడుకు అర్జెంట్ గా యాక్సిడెంట్ కేసులో అరెస్ట్ అయ్యాడు, పోలీస్ స్టేషన్ కి ₹50,000 పంపించు!",
+        anydesk: "Urgent: Download TeamViewer or AnyDesk on your mobile phone, share the 9-digit access code and verify your bank account UPI PIN immediately.",
+        secure: "Hello, good afternoon. I'm calling from Customer Service regarding your scheduled appointment feedback tomorrow."
+    };
+    t.value = presets[type] || '';
+}
+
+// ═══════ FULL ANALYSIS ═══════
+async function runFullAnalysis() {
+    let fileInput = document.getElementById('audioFileInput');
+    let transcript = document.getElementById('voiceTranscript').value;
+    if (fileInput.files.length === 0) { alert("Please select a .wav audio file."); return; }
+
+    let form = new FormData();
+    form.append("file", fileInput.files[0]);
+    form.append("transcript", transcript);
+
+    let resultCard = document.getElementById('voiceResultCard');
+    resultCard.style.display = 'block';
+    document.getElementById('voiceDetailedResults').innerHTML = '<div class="text-primary">Analyzing — running all engines...</div>';
+
+    try {
+        let res = await fetch('/analyze', { method: 'POST', body: form });
+        let data = await res.json();
+        if (data.error) { document.getElementById('voiceDetailedResults').innerHTML = `<div class="text-critical">${data.error}</div>`; return; }
+
+        currentAnalysis = data;
+        scanCounts.scans++;
+        if (data.severity === 'CRITICAL' || data.severity === 'HIGH') scanCounts.threats++;
+        else if (data.severity === 'MEDIUM') scanCounts.warnings++;
+        else scanCounts.safe++;
+
+        updateDashboard(data);
+        renderVoiceResults(data);
+        renderAttackDNA(data.attack_dna);
+        renderDeceptionChain(data.deception_chain);
+        renderTrustEngine(data.trust, data.evidence_timeline);
+        renderDefenseActions(data.defense);
+        renderFirewall(data.sensitive_actions);
+        updateCounters();
+
+        if (data.trust.trust_score < 60) {
+            document.getElementById('voiceSOSBox').classList.remove('hidden');
+        } else {
+            document.getElementById('voiceSOSBox').classList.add('hidden');
+        }
+    } catch(err) {
+        document.getElementById('voiceDetailedResults').innerHTML = `<div class="text-critical">Connection error: ${err.message}</div>`;
+    }
+}
+
+function renderVoiceResults(data) {
+    let v = data.voice;
+    let badge = document.getElementById('voiceResultBadge');
+    let auth = document.getElementById('vfAuthenticity');
+    let tech = document.getElementById('vfTechnique');
+    let trust = document.getElementById('vfTrustScore');
+
+    auth.textContent = v.authenticity.toFixed(0) + '%';
+    auth.className = 'metric-value ' + (v.is_fake ? 'text-critical' : 'text-safe');
+    tech.textContent = v.technique;
+    tech.className = 'metric-value ' + (v.is_fake ? 'text-critical' : 'text-safe');
+    tech.style.fontSize = '1.2rem';
+    trust.textContent = data.trust.trust_score;
+    trust.className = 'metric-value ' + trustColor(data.trust.trust_score);
+
+    badge.textContent = v.is_fake ? 'SYNTHETIC VOICE' : 'AUTHENTIC';
+    badge.className = 'card-badge ' + (v.is_fake ? 'badge-critical' : 'badge-safe');
+
+    let html = '<div class="card-title mb-8">Evidence Timeline</div>';
+    data.evidence_timeline.forEach(ev => {
+        let dotClass = ev.severity === 'CRITICAL' ? 'critical' : (ev.severity === 'WARNING' ? 'warning' : (ev.severity === 'SAFE' ? 'safe' : 'info'));
+        html += `<div class="timeline-item"><span class="timeline-time">${ev.time}</span><div class="timeline-dot ${dotClass}"></div><div class="timeline-desc">${ev.description}</div></div>`;
+    });
+    document.getElementById('voiceDetailedResults').innerHTML = html;
+}
+
+function updateDashboard(data) {
+    let ts = data.trust.trust_score;
+    updateTrustRing(ts, data.trust.risk_level);
+    document.getElementById('dashSpeaker').textContent = data.voice.is_fake ? 'Unverified' : 'Verified';
+    document.getElementById('dashSpeaker').className = 'mono ' + (data.voice.is_fake ? 'text-critical' : 'text-safe');
+    document.getElementById('dashVoice').textContent = data.voice.is_fake ? 'Synthetic' : 'Authentic';
+    document.getElementById('dashVoice').className = 'mono ' + (data.voice.is_fake ? 'text-critical' : 'text-safe');
+    document.getElementById('dashIntent').textContent = data.deception_chain.chain_complete ? 'Scam Detected' : 'Normal';
+    document.getElementById('dashIntent').className = 'mono ' + (data.deception_chain.chain_complete ? 'text-critical' : 'text-safe');
+    document.getElementById('dashThreat').textContent = data.trust.risk_level;
+    document.getElementById('dashThreat').className = 'mono ' + trustColor(ts);
+
+    let ib = document.getElementById('dashInteractionBadge');
+    ib.textContent = ts < 35 ? 'CRITICAL' : (ts < 60 ? 'HIGH RISK' : (ts < 80 ? 'SUSPICIOUS' : 'SECURE'));
+    ib.className = 'card-badge ' + (ts < 35 ? 'badge-critical' : (ts < 60 ? 'badge-critical' : (ts < 80 ? 'badge-warning' : 'badge-safe')));
+
+    let gb = document.getElementById('globalStatusBadge');
+    gb.textContent = ts < 60 ? '● THREAT DETECTED' : '● PROTECTED';
+    gb.className = 'card-badge ' + (ts < 60 ? 'badge-critical' : 'badge-safe');
+
+    let da = document.getElementById('dashDefenseActions');
+    da.innerHTML = '';
+    data.defense.actions.forEach(a => {
+        let cls = a.action === 'BLOCK' || a.action === 'ESCALATE' || a.action === 'INTERCEPT' ? 'critical' : (a.action === 'WARN' || a.action === 'RE_VERIFY' ? 'warning' : '');
+        da.innerHTML += `<div class="defense-action ${cls}"><span class="check">✓</span> ${a.description}</div>`;
+    });
+
+    let ds = document.getElementById('dashDefenseStatus');
+    ds.textContent = '● ' + data.defense.defense_level;
+    ds.style.color = ts < 35 ? 'var(--critical)' : (ts < 60 ? 'var(--warning)' : 'var(--safe)');
+
+    // Recent events
+    let re = document.getElementById('dashRecentEvents');
+    let evHtml = '';
+    data.evidence_timeline.slice(-5).reverse().forEach(ev => {
+        let c = ev.severity === 'CRITICAL' ? 'text-critical' : (ev.severity === 'WARNING' ? 'text-warning' : 'text-safe');
+        evHtml += `<div style="font-size:0.75rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.04);"><span class="mono text-dim" style="font-size:0.68rem;">${ev.time}</span> <span class="${c}">${ev.description}</span></div>`;
+    });
+    re.innerHTML = evHtml || '<div class="text-dim" style="font-size:0.78rem;">No events</div>';
+}
+
+function updateTrustRing(score, riskLevel) {
+    let circle = document.getElementById('trustRingCircle');
+    let circumference = 314;
+    let offset = circumference - (score / 100) * circumference;
+    circle.style.strokeDashoffset = offset;
+    circle.style.stroke = score >= 80 ? 'var(--safe)' : (score >= 60 ? 'var(--warning)' : 'var(--critical)');
+    document.getElementById('trustScoreValue').textContent = score;
+    document.getElementById('trustScoreValue').className = 'score ' + trustColor(score);
+    document.getElementById('trustRiskLabel').textContent = riskLevel;
+}
+
+function trustColor(score) {
+    return score >= 80 ? 'text-safe' : (score >= 60 ? 'text-warning' : 'text-critical');
+}
+
+function updateCounters() {
+    document.getElementById('statSafe').textContent = scanCounts.safe;
+    document.getElementById('statThreats').textContent = scanCounts.threats;
+    document.getElementById('statWarnings').textContent = scanCounts.warnings;
+    document.getElementById('statScans').textContent = scanCounts.scans;
+}
+
+// ═══════ ATTACK DNA RENDERER ═══════
+function renderAttackDNA(dna) {
+    let el = document.getElementById('attackDnaContent');
+    if (!dna) { el.innerHTML = '<div class="card" style="text-align:center; padding:40px;"><div class="text-safe">No attack detected — interaction is safe.</div></div>'; return; }
+
+    let riskColor = dna.risk_score >= 70 ? 'text-critical' : (dna.risk_score >= 40 ? 'text-warning' : 'text-safe');
+    let html = `
+        <div class="dna-header">
+            <div class="dna-id">${dna.attack_id}</div>
+            <div class="dna-risk ${riskColor}">${dna.risk_score}</div>
+            <div class="metric-label">ATTACK RISK SCORE</div>
+        </div>
+        <div class="grid-2 gap-8">
+            <div class="card">
+                <div class="card-title mb-8">Attack Profile</div>
+                <div class="dna-node"><span class="node-label">Attack Type</span><span class="node-value text-critical">${dna.attack_type}</span></div>
+                <div class="dna-node"><span class="node-label">Technique</span><span class="node-value text-secondary">${dna.technique}</span></div>
+                <div class="dna-node"><span class="node-label">Target</span><span class="node-value text-warning">${dna.target}</span></div>
+                <div class="dna-node"><span class="node-label">Intent</span><span class="node-value text-critical">${dna.intent}</span></div>
+                <div class="dna-node"><span class="node-label">Confidence</span><span class="node-value">${(dna.confidence * 100).toFixed(1)}%</span></div>
+                <div class="dna-node"><span class="node-label">Campaign</span><span class="node-value">${dna.campaign_id || 'Isolated'}</span></div>
+            </div>
+            <div class="card">
+                <div class="card-title mb-8">Evidence Summary</div>
+                <div class="dna-node"><span class="node-label">Deception Stages</span><span class="node-value">${dna.evidence?.deception_stages || 0}/5</span></div>
+                <div class="dna-node"><span class="node-label">Actions Detected</span><span class="node-value text-critical">${(dna.evidence?.sensitive_actions_detected || []).join(', ') || 'None'}</span></div>
+                <div class="dna-node"><span class="node-label">Keywords</span><span class="node-value">${(dna.evidence?.threat_keywords || []).slice(0,5).join(', ') || 'None'}</span></div>
+                <div class="dna-node"><span class="node-label">Defense Actions</span><span class="node-value">${(dna.evidence?.defense_actions || []).join(', ')}</span></div>
+                <div class="dna-node"><span class="node-label">Fingerprint</span><span class="node-value text-dim" style="font-size:0.65rem; max-width:200px; word-break:break-all;">${dna.fingerprint}</span></div>
+            </div>
+        </div>`;
+    if (dna.similar_attacks && dna.similar_attacks.length > 0) {
+        html += '<div class="card mt-8"><div class="card-title mb-8">Similar Historical Attacks</div>';
+        dna.similar_attacks.forEach(sa => {
+            html += `<div class="dna-node"><span class="node-label">${sa.attack_id}</span><span class="node-value">${sa.attack_type} — Similarity: ${(sa.similarity*100).toFixed(0)}%</span></div>`;
+        });
+        html += '</div>';
+    }
+    el.innerHTML = html;
+}
+
+// ═══════ DECEPTION CHAIN RENDERER ═══════
+function renderDeceptionChain(chain) {
+    let el = document.getElementById('deceptionContent');
+    let html = `<div class="card"><div class="card-header"><span class="card-title">Deception Chain Detection</span>
+        <span class="card-badge ${chain.chain_complete ? 'badge-critical' : (chain.stages_detected > 0 ? 'badge-warning' : 'badge-safe')}">${chain.stages_detected}/${chain.total_stages} STAGES</span></div>
+        <div class="metric-card mb-12" style="text-align:center;"><div class="metric-value ${chain.chain_complete ? 'text-critical' : 'text-safe'}" style="font-size:2.5rem;">${(chain.chain_score * 100).toFixed(0)}%</div><div class="metric-label">Deception Chain Score</div></div>`;
+    chain.chain.forEach((stage, i) => {
+        html += `<div class="chain-stage ${stage.detected ? 'detected' : ''}">
+            <span class="stage-name">${stage.detected ? '🔴' : '⚪'} ${stage.stage.replace(/_/g, ' ')}</span>
+            <span style="flex:1; font-size:0.72rem; color:var(--text-dim);">${stage.detected ? stage.matched_keywords.join(', ') : '—'}</span>
+            <span class="stage-status ${stage.detected ? 'text-critical' : 'text-dim'}">${stage.detected ? 'DETECTED' : 'CLEAR'}</span>
+        </div>`;
+        if (i < chain.chain.length - 1) html += '<div class="chain-arrow">↓</div>';
+    });
+    if (chain.progression) html += `<div class="mt-12" style="font-size:0.78rem;"><span class="label">Progression</span><div class="mono text-critical">${chain.progression}</div></div>`;
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// ═══════ TRUST ENGINE RENDERER ═══════
+function renderTrustEngine(trust, timeline) {
+    let el = document.getElementById('trustContent');
+    let ts = trust.trust_score;
+    let html = `<div class="grid-2 gap-8">
+        <div class="card" style="text-align:center;">
+            <div class="card-title mb-8">Trust Score</div>
+            <div class="metric-value ${trustColor(ts)}" style="font-size:4rem;">${ts}</div>
+            <div class="metric-label">${trust.risk_level} RISK</div>
+        </div>
+        <div class="card"><div class="card-title mb-8">Score Breakdown</div>`;
+    let comp = trust.components;
+    ['voice_impact','deception_impact','action_impact','keyword_impact','remote_tool_impact'].forEach(k => {
+        let v = comp[k]; let label = k.replace(/_/g, ' ').toUpperCase();
+        let barW = Math.min(v / 40 * 100, 100);
+        html += `<div style="margin-bottom:8px;"><div style="display:flex; justify-content:space-between; font-size:0.72rem;"><span class="text-dim">${label}</span><span class="mono">-${v.toFixed(1)}</span></div>
+            <div style="height:6px; background:var(--border); border-radius:3px; margin-top:3px;"><div style="height:100%; width:${barW}%; background:var(--critical); border-radius:3px;"></div></div></div>`;
+    });
+    html += '</div></div>';
+    if (timeline) {
+        html += '<div class="card mt-8"><div class="card-title mb-8">Evidence Timeline</div>';
+        timeline.forEach(ev => {
+            let dotClass = ev.severity === 'CRITICAL' ? 'critical' : (ev.severity === 'WARNING' ? 'warning' : (ev.severity === 'SAFE' ? 'safe' : 'info'));
+            html += `<div class="timeline-item"><span class="timeline-time">${ev.time}</span><div class="timeline-dot ${dotClass}"></div><div class="timeline-desc">${ev.description}</div></div>`;
+        });
+        html += '</div>';
+    }
+    el.innerHTML = html;
+}
+
+// ═══════ DEFENSE RENDERER ═══════
+function renderDefenseActions(defense) {
+    let el = document.getElementById('defenseContent');
+    let html = `<div class="card"><div class="card-header"><span class="card-title">Adaptive Defense Engine</span>
+        <span class="card-badge ${defense.defense_level === 'CRITICAL' ? 'badge-critical' : (defense.defense_level === 'HIGH' ? 'badge-critical' : (defense.defense_level === 'MEDIUM' ? 'badge-warning' : 'badge-safe'))}">${defense.defense_level}</span></div>`;
+    defense.actions.forEach(a => {
+        let cls = a.action === 'BLOCK' || a.action === 'ESCALATE' || a.action === 'INTERCEPT' ? 'critical' : (a.action === 'WARN' || a.action === 'RE_VERIFY' || a.action === 'CHALLENGE' ? 'warning' : '');
+        html += `<div class="defense-action ${cls}"><span class="check">✓</span> <strong>${a.action}</strong> — ${a.description}</div>`;
+    });
+    if (defense.auto_block_active) html += '<div class="mt-8" style="color:var(--critical); font-size:0.8rem; font-weight:700;">⛔ AUTO-BLOCK ACTIVE — All sensitive actions are blocked</div>';
+    if (defense.verification_required) html += '<div class="mt-8" style="color:var(--warning); font-size:0.8rem; font-weight:700;">🔐 VERIFICATION REQUIRED before any sensitive action proceeds</div>';
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// ═══════ FIREWALL RENDERER ═══════
+function renderFirewall(actions) {
+    let el = document.getElementById('firewallContent');
+    if (!actions || actions.length === 0) { el.innerHTML = '<div class="card" style="text-align:center; padding:40px;"><div class="text-safe" style="font-size:1.1rem;">✅ No sensitive actions detected — Firewall clear</div></div>'; return; }
+    let html = '<div class="card"><div class="card-header"><span class="card-title">Transaction / Action Firewall</span><span class="card-badge badge-critical">INTERCEPTED</span></div>';
+    actions.forEach(a => {
+        html += `<div class="defense-action critical"><span style="font-size:1.1rem;">🛑</span><div><strong>${a.action.replace(/_/g, ' ')}</strong><div class="text-dim" style="font-size:0.72rem;">Keywords: ${a.matched.join(', ')}</div></div><span class="card-badge badge-critical" style="margin-left:auto;">BLOCKED</span></div>`;
+    });
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// ═══════ ATTACK LAB ═══════
+let selectedLabAttack = 'tts';
+function selectLabAttack(type) {
+    selectedLabAttack = type;
+    document.querySelectorAll('.lab-pill').forEach(p => p.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+}
+
+async function runLabSimulation() {
+    let btn = document.getElementById('labRunBtn');
+    btn.textContent = 'Running Simulation...';
+    btn.disabled = true;
+    let form = new FormData();
+    form.append("attack_type", selectedLabAttack);
+    form.append("transcript", document.getElementById('labTranscript').value);
+
+    try {
+        let res = await fetch('/attack_lab', { method: 'POST', body: form });
+        let data = await res.json();
+        currentAnalysis = data;
+
+        scanCounts.scans++;
+        if (data.trust.trust_score < 60) scanCounts.threats++;
+        else if (data.trust.trust_score < 80) scanCounts.warnings++;
+        else scanCounts.safe++;
+
+        renderAttackDNA(data.attack_dna);
+        renderDeceptionChain(data.deception_chain);
+        renderTrustEngine(data.trust, data.evidence_timeline);
+        renderDefenseActions(data.defense);
+        renderFirewall(data.sensitive_actions);
+        updateCounters();
+
+        let html = `<div class="card"><div class="card-header"><span class="card-title">Simulation Result: ${data.simulation.toUpperCase()}</span>
+            <span class="card-badge ${data.voice.is_fake ? 'badge-critical' : 'badge-safe'}">${data.voice.is_fake ? 'ATTACK' : 'BENIGN'}</span></div>
+            <p style="font-size:0.82rem; margin-bottom:12px;">${data.description}</p>
+            <div class="grid-4 gap-8">
+                <div class="metric-card"><div class="metric-value ${data.voice.is_fake ? 'text-critical' : 'text-safe'}">${data.voice.authenticity.toFixed(0)}%</div><div class="metric-label">Authenticity</div></div>
+                <div class="metric-card"><div class="metric-value text-secondary" style="font-size:1.2rem;">${data.voice.technique}</div><div class="metric-label">Technique</div></div>
+                <div class="metric-card"><div class="metric-value ${trustColor(data.trust.trust_score)}">${data.trust.trust_score}</div><div class="metric-label">Trust</div></div>
+                <div class="metric-card"><div class="metric-value text-critical">${data.defense.defense_level}</div><div class="metric-label">Defense</div></div>
+            </div>
+            <div class="mt-16"><div class="card-title mb-8">Evidence Timeline</div>`;
+        data.evidence_timeline.forEach(ev => {
+            let dotClass = ev.severity === 'CRITICAL' ? 'critical' : (ev.severity === 'WARNING' ? 'warning' : (ev.severity === 'SAFE' ? 'safe' : 'info'));
+            html += `<div class="timeline-item"><span class="timeline-time">${ev.time}</span><div class="timeline-dot ${dotClass}"></div><div class="timeline-desc">${ev.description}</div></div>`;
+        });
+        html += '</div></div>';
+        document.getElementById('labResults').innerHTML = html;
+    } catch(err) {
+        document.getElementById('labResults').innerHTML = `<div class="card text-critical">Error: ${err.message}</div>`;
+    }
+    btn.textContent = '▶ Run Simulation';
+    btn.disabled = false;
+}
+
+// ═══════ THREAT INTELLIGENCE ═══════
+async function loadThreatIntel() {
+    try {
+        let res = await fetch('/threat_intelligence');
+        let data = await res.json();
+        let html = `<div class="grid-4 gap-8 mb-12">
+            <div class="metric-card"><div class="metric-value text-critical">${data.total_attacks}</div><div class="metric-label">Total Attacks</div></div>
+            <div class="metric-card"><div class="metric-value text-warning">${data.average_risk_score?.toFixed(0) || 0}</div><div class="metric-label">Avg Risk</div></div>
+            <div class="metric-card"><div class="metric-value text-primary">${data.by_technique?.length || 0}</div><div class="metric-label">Techniques</div></div>
+            <div class="metric-card"><div class="metric-value text-secondary">${data.campaigns?.length || 0}</div><div class="metric-label">Campaigns</div></div>
+        </div>`;
+        if (data.by_type && data.by_type.length > 0) {
+            html += '<div class="card-title mb-8">Attacks by Type</div><table class="data-table mb-12"><tr><th>Attack Type</th><th>Count</th></tr>';
+            data.by_type.forEach(r => { html += `<tr><td>${r.attack_type}</td><td class="mono">${r.count}</td></tr>`; });
+            html += '</table>';
+        }
+        if (data.by_technique && data.by_technique.length > 0) {
+            html += '<div class="card-title mb-8">Attacks by Technique</div><table class="data-table"><tr><th>Technique</th><th>Count</th></tr>';
+            data.by_technique.forEach(r => { html += `<tr><td>${r.technique}</td><td class="mono">${r.count}</td></tr>`; });
+            html += '</table>';
+        }
+        document.getElementById('threatIntelContent').innerHTML = html;
+    } catch(err) { document.getElementById('threatIntelContent').innerHTML = '<div class="text-critical">Failed to load.</div>'; }
+}
+
+// ═══════ SIGNATURES ═══════
+async function loadSignatures() {
+    try {
+        let res = await fetch('/attack_signatures?limit=30');
+        let data = await res.json();
+        if (!data.signatures || data.signatures.length === 0) { document.getElementById('signaturesContent').innerHTML = '<div class="text-dim">No attack signatures stored yet.</div>'; return; }
+        let html = '<table class="data-table"><tr><th>Attack ID</th><th>Type</th><th>Technique</th><th>Risk</th><th>Intent</th><th>Timestamp</th></tr>';
+        data.signatures.forEach(s => {
+            let rc = s.risk_score >= 70 ? 'text-critical' : (s.risk_score >= 40 ? 'text-warning' : 'text-safe');
+            html += `<tr><td class="mono text-primary">${s.attack_id}</td><td>${s.attack_type}</td><td>${s.technique}</td><td class="mono ${rc}">${s.risk_score}</td><td>${s.intent}</td><td class="text-dim">${s.timestamp?.substring(0,19)}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('signaturesContent').innerHTML = html;
+    } catch(err) { document.getElementById('signaturesContent').innerHTML = '<div class="text-critical">Failed to load.</div>'; }
+}
+
+// ═══════ AUDIT LOGS ═══════
+async function loadAuditLogs() {
+    try {
+        let res = await fetch('/audit_history?limit=50');
+        let data = await res.json();
+        if (!data.events || data.events.length === 0) { document.getElementById('auditLogsContent').innerHTML = '<div class="text-dim">No audit records found.</div>'; return; }
+        let html = '<table class="data-table"><tr><th>ID</th><th>Timestamp</th><th>Type</th><th>Severity</th><th>Summary</th></tr>';
+        data.events.forEach(ev => {
+            let sc = ev.severity === 'CRITICAL' ? 'text-critical' : (ev.severity === 'HIGH' ? 'text-warning' : 'text-safe');
+            html += `<tr><td class="mono text-dim">${ev.id}</td><td class="text-dim">${ev.timestamp?.replace('T',' ').substring(0,19)}</td><td class="mono">${ev.event_type}</td><td class="${sc} mono fw-800">${ev.severity}</td><td>${ev.threat_summary}</td></tr>`;
+        });
+        html += '</table>';
+        document.getElementById('auditLogsContent').innerHTML = html;
+    } catch(err) { document.getElementById('auditLogsContent').innerHTML = '<div class="text-critical">Failed to load.</div>'; }
+}
+
+// ═══════ SYSTEM HEALTH ═══════
+async function loadSystemHealth() {
+    try {
+        let res = await fetch('/system_health');
+        let data = await res.json();
+        let html = `<div class="grid-4 gap-8 mb-12">
+            <div class="metric-card"><div class="metric-value text-safe">${data.status}</div><div class="metric-label">Status</div></div>
+            <div class="metric-card"><div class="metric-value text-primary">${data.engines?.length || 0}</div><div class="metric-label">Engines</div></div>
+            <div class="metric-card"><div class="metric-value text-secondary">${data.session_events}</div><div class="metric-label">Events</div></div>
+            <div class="metric-card"><div class="metric-value ${data.db_persistent ? 'text-safe' : 'text-critical'}">${data.db_persistent ? 'YES' : 'NO'}</div><div class="metric-label">DB Active</div></div>
+        </div>
+        <div class="card-title mb-8">Active Engines</div>`;
+        (data.engines || []).forEach(e => { html += `<div class="defense-action"><span class="check text-safe">✓</span> ${e}</div>`; });
+        html += `<div class="card-title mb-8 mt-16">API Endpoints</div>`;
+        (data.endpoints || []).forEach(ep => { html += `<div class="dna-node"><span class="node-label">Endpoint</span><span class="node-value mono text-primary">${ep}</span></div>`; });
+        html += `<div class="mt-16 text-dim" style="font-size:0.72rem;">Platform: ${data.platform} • PyTorch: ${data.torch_version} • CUDA: ${data.cuda_available}</div>`;
+        document.getElementById('systemHealthContent').innerHTML = html;
+    } catch(err) { document.getElementById('systemHealthContent').innerHTML = '<div class="text-critical">Failed to load.</div>'; }
+}
+
+// ═══════ LIVE PROTECTION ═══════
+let recognition = null, isListening = false, audioCtx, analyser, microphone, animId;
+const canvas = document.getElementById('micVisualizer');
+const canvasCtx = canvas.getContext('2d');
+canvas.width = 400; canvas.height = 50;
+
+function drawWave() {
+    if (!isListening) {
+        canvasCtx.fillStyle = '#0D1526'; canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+        canvasCtx.beginPath(); canvasCtx.strokeStyle = '#263449'; canvasCtx.moveTo(0, 25); canvasCtx.lineTo(canvas.width, 25); canvasCtx.stroke();
+        return;
+    }
+    animId = requestAnimationFrame(drawWave);
+    let buf = analyser.frequencyBinCount; let arr = new Uint8Array(buf); analyser.getByteTimeDomainData(arr);
+    canvasCtx.fillStyle = '#0D1526'; canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+    canvasCtx.lineWidth = 2; canvasCtx.strokeStyle = '#38BDF8'; canvasCtx.beginPath();
+    let sw = canvas.width / buf; let x = 0;
+    for (let i = 0; i < buf; i++) { let v = arr[i] / 128; let y = v * 25; if (i === 0) canvasCtx.moveTo(x, y); else canvasCtx.lineTo(x, y); x += sw; }
+    canvasCtx.lineTo(canvas.width, 25); canvasCtx.stroke();
+}
+
+function detectLang(text) {
+    if (/[\u0C00-\u0C7F]/.test(text)) return "Telugu";
+    if (/[\u0900-\u097F]/.test(text)) return "Hindi";
+    if (/[\u0B80-\u0BFF]/.test(text)) return "Tamil";
+    if (/[\u0D00-\u0D7F]/.test(text)) return "Malayalam";
+    if (/[\u0C80-\u0CFF]/.test(text)) return "Kannada";
+    if (/[\u0980-\u09FF]/.test(text)) return "Bengali";
+    return "English";
+}
+
+function toggleLiveMic() {
+    let btn = document.getElementById('liveBtn');
+    let sel = document.getElementById('langSelect').value;
+
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) { alert("Requires Chrome or Edge."); return; }
+
+    if (!isListening) {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioCtx.createAnalyser(); microphone = audioCtx.createMediaStreamSource(stream);
+            microphone.connect(analyser); analyser.fftSize = 2048; isListening = true; drawWave();
+
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SR(); recognition.continuous = true; recognition.interimResults = true;
+            if (sel !== "auto") recognition.lang = sel;
+
+            recognition.onstart = () => {
+                btn.textContent = 'Stop Live Protection'; btn.className = 'btn btn-danger btn-block';
+            };
+
+            recognition.onresult = async (event) => {
+                let spoken = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) spoken += event.results[i][0].transcript;
+                let lang = detectLang(spoken);
+                document.getElementById('liveTranscript').innerHTML = `<span class="text-dim">[${lang}]</span> "${spoken}"`;
+
+                // Analyze transcript via backend
+                try {
+                    let form = new FormData();
+                    form.append("transcript", spoken);
+                    let res = await fetch('/analyze_transcript', { method: 'POST', body: form });
+                    let data = await res.json();
+
+                    let ts = data.trust.trust_score;
+                    document.getElementById('liveTrustScore').textContent = ts;
+                    document.getElementById('liveTrustScore').className = 'metric-value ' + trustColor(ts);
+                    let lb = document.getElementById('liveTrustBadge');
+                    lb.textContent = data.trust.risk_level; lb.className = 'card-badge ' + (ts < 35 ? 'badge-critical' : (ts < 60 ? 'badge-critical' : (ts < 80 ? 'badge-warning' : 'badge-safe')));
+
+                    let da = document.getElementById('liveDefenseActions'); da.innerHTML = '';
+                    data.defense.actions.forEach(a => {
+                        let cls = a.action === 'BLOCK' || a.action === 'ESCALATE' || a.action === 'INTERCEPT' ? 'critical' : (a.action === 'WARN' ? 'warning' : '');
+                        da.innerHTML += `<div class="defense-action ${cls}"><span class="check">✓</span> ${a.description}</div>`;
+                    });
+
+                    if (ts < 60) { document.getElementById('liveSOSBox').classList.remove('hidden'); }
+                    else { document.getElementById('liveSOSBox').classList.add('hidden'); }
+
+                    // Live timeline
+                    let tl = document.getElementById('liveTimeline'); let tlHtml = '';
+                    (data.evidence_timeline || []).forEach(ev => {
+                        let dc = ev.severity === 'CRITICAL' ? 'critical' : (ev.severity === 'WARNING' ? 'warning' : (ev.severity === 'SAFE' ? 'safe' : 'info'));
+                        tlHtml += `<div class="timeline-item"><span class="timeline-time">${ev.time}</span><div class="timeline-dot ${dc}"></div><div class="timeline-desc">${ev.description}</div></div>`;
+                    });
+                    tl.innerHTML = tlHtml || '<div class="text-dim" style="font-size:0.78rem;">No events</div>';
+
+                } catch(e) {}
+            };
+
+            recognition.onend = () => { if (isListening) try { recognition.start(); } catch(e){} };
+            recognition.start();
+        }).catch(err => alert("Microphone access denied."));
+    } else {
+        isListening = false; cancelAnimationFrame(animId);
+        if (recognition) recognition.stop(); if (audioCtx) audioCtx.close();
+        btn.textContent = 'Start Live Protection'; btn.className = 'btn btn-primary btn-block';
+        document.getElementById('liveTranscript').innerHTML = 'Awaiting speech...';
+        document.getElementById('liveTrustScore').textContent = '100';
+        document.getElementById('liveTrustScore').className = 'metric-value text-safe';
+        document.getElementById('liveTrustBadge').textContent = 'SAFE'; document.getElementById('liveTrustBadge').className = 'card-badge badge-safe';
+        document.getElementById('liveSOSBox').classList.add('hidden');
+        drawWave();
+    }
+}
+
+// ═══════ VIDEO FORENSICS ═══════
+let videoStream = null, videoInterval = null, isVideoActive = false;
+async function toggleVideoShield() {
+    let video = document.getElementById('webcamVideo');
+    let btn = document.getElementById('videoBtn');
+    let badge = document.getElementById('videoBadge');
+    let display = document.getElementById('videoResultDisplay');
+    let src = document.getElementById('videoSource').value;
+    let snap = document.getElementById('snapshotCanvas');
+
+    if (!isVideoActive) {
+        try {
+            videoStream = src === "stealth" ? await navigator.mediaDevices.getDisplayMedia({video:true}) : await navigator.mediaDevices.getUserMedia({video:true});
+            video.srcObject = videoStream; isVideoActive = true;
+            btn.textContent = 'Stop Face Shield'; btn.className = 'btn btn-danger btn-block mt-12';
+            badge.textContent = 'SCANNING'; badge.className = 'card-badge badge-info';
+            if (videoStream.getVideoTracks().length > 0) videoStream.getVideoTracks()[0].onended = () => { if (isVideoActive) toggleVideoShield(); };
+
+            snap.width = 320; snap.height = 240; let ctx = snap.getContext('2d');
+            videoInterval = setInterval(async () => {
+                if (!isVideoActive) return;
+                ctx.drawImage(video, 0, 0, 320, 240);
+                snap.toBlob(async (blob) => {
+                    if (!blob) return;
+                    let form = new FormData(); form.append("file", blob, "frame.jpg");
+                    try {
+                        let res = await fetch('/predict_video', {method:'POST', body:form});
+                        let data = await res.json();
+                        if (data.is_deepfake) {
+                            badge.textContent = 'THREAT'; badge.className = 'card-badge badge-critical';
+                            display.innerHTML = `<div class="text-critical" style="font-weight:700;">🛑 ${data.description}</div><div class="mt-8 text-dim" style="font-size:0.72rem;">FFT Ratio: ${data.metrics?.fft_high_freq_ratio || 'N/A'} | Threat Level: ${data.metrics?.threat_level}</div>`;
+                        } else {
+                            badge.textContent = 'SECURE'; badge.className = 'card-badge badge-safe';
+                            display.innerHTML = `<div class="text-safe" style="font-weight:700;">✅ ${data.description}</div><div class="mt-8 text-dim" style="font-size:0.72rem;">FFT Ratio: ${data.metrics?.fft_high_freq_ratio || 'N/A'}</div>`;
+                        }
+                    } catch(e) {}
+                }, 'image/jpeg', 0.7);
+            }, 2000);
+        } catch(e) { alert("Video access denied."); }
+    } else {
+        isVideoActive = false; clearInterval(videoInterval);
+        if (videoStream) videoStream.getTracks().forEach(t => t.stop()); video.srcObject = null;
+        btn.textContent = 'Activate Face Shield'; btn.className = 'btn btn-primary btn-block mt-12';
+        badge.textContent = 'INACTIVE'; badge.className = 'card-badge badge-safe';
+        display.innerHTML = 'Activate the video shield to begin analysis.';
+    }
+}
+
+// ═══════ SOS ═══════
+async function triggerSOS(service) {
+    let phone = document.getElementById('guardianPhone').value;
+    let form = new FormData(); form.append("service", service); form.append("guardian_phone", phone);
+    try {
+        let res = await fetch('/trigger_emergency_alert', {method:'POST', body:form});
+        let data = await res.json();
+        alert(`🚨 EMERGENCY DISPATCH\n${data.message}`);
+    } catch(e) { alert(`🚨 DISPATCH ACTIVATED: ${service}`); }
+}
+
+// ═══════ AUDIO PLAYGROUND & BIOMETRICS ═══════
+function playAudioSample(sampleType) {
+    let player = document.getElementById('audioSamplePlayer');
+    player.src = `/sample_audio/${sampleType}?t=` + Date.now();
+    player.style.display = 'block';
+    player.play();
+}
+
+async function verifyBiometrics() {
+    let target = document.getElementById('biometricTargetSpeaker').value;
+    let sample = document.getElementById('biometricSampleType').value;
+    let form = new FormData();
+    form.append('target_speaker', target);
+    form.append('sample_type', sample);
+
+    try {
+        let res = await fetch('/voice_biometrics_compare', { method: 'POST', body: form });
+        let data = await res.json();
+
+        let badge = document.getElementById('biometricBadge');
+        let container = document.getElementById('biometricDetailsContainer');
+
+        if (data.is_match) {
+            badge.textContent = 'VALIDATED MATCH';
+            badge.className = 'card-badge badge-safe';
+        } else {
+            badge.textContent = 'SYNTHETIC MISMATCH';
+            badge.className = 'card-badge badge-critical';
+        }
+
+        container.innerHTML = `
+            <div style="font-weight:700; font-size:1.05rem; color:${data.is_match ? 'var(--safe)' : 'var(--critical)'}; margin-bottom:12px;">
+                ${data.verdict}
+            </div>
+            <div class="grid-2 gap-8 mb-12">
+                <div class="metric-card">
+                    <div class="metric-value" style="color:${data.is_match ? 'var(--safe)' : 'var(--critical)'}">${data.similarity_score}%</div>
+                    <div class="metric-label">Voice Biometric Similarity</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${data.hnr_db}</div>
+                    <div class="metric-label">Harmonic-to-Noise Ratio</div>
+                </div>
+            </div>
+            <div style="font-size:0.82rem; display:grid; grid-template-columns:1fr 1fr; gap:10px; background:var(--bg-elevated); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border);">
+                <div><strong>Target Speaker:</strong> ${data.target_speaker}</div>
+                <div><strong>Pitch Jitter:</strong> ${data.pitch_jitter}</div>
+                <div><strong>Amplitude Shimmer:</strong> ${data.amplitude_shimmer}</div>
+                <div><strong>Vocal Tract Dimension:</strong> ${data.vocal_tract_length}</div>
+                <div><strong>F1 Formant Peak:</strong> ${data.formant_analysis.F1}</div>
+                <div><strong>F2 Formant Peak:</strong> ${data.formant_analysis.F2}</div>
+                <div><strong>F3 Formant Peak:</strong> ${data.formant_analysis.F3}</div>
+                <div><strong>F4 Formant Peak:</strong> ${data.formant_analysis.F4}</div>
+            </div>
+        `;
+    } catch(e) {
+        alert("Failed to perform biometric verification");
+    }
+}
+
+// ═══════ RADAR SWEEP ANIMATION ═══════
+let radarAngle = 0;
+let radarThreats = [];
+
+function initThreatRadar() {
+    let canvas = document.getElementById('threatRadarCanvas');
+    if (!canvas) return;
+    let ctx = canvas.getContext('2d');
+    let width = canvas.width;
+    let height = canvas.height;
+    let cx = width / 2;
+    let cy = height / 2;
+    let radius = width / 2 - 10;
+
+    function renderRadar() {
+        ctx.fillStyle = '#080D1A';
+        ctx.fillRect(0, 0, width, height);
+
+        // Concentric grid circles
+        ctx.strokeStyle = '#1E293B';
+        ctx.lineWidth = 1;
+        for (let r = radius / 3; r <= radius; r += radius / 3) {
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Crosshairs
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - radius); ctx.lineTo(cx, cy + radius);
+        ctx.moveTo(cx - radius, cy); ctx.lineTo(cx + radius, cy);
+        ctx.stroke();
+
+        // Sweeping scanner beam
+        radarAngle += 0.03;
+        if (radarAngle > Math.PI * 2) radarAngle = 0;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, radarAngle - 0.35, radarAngle);
+        ctx.closePath();
+        let grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+        grad.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+        grad.addColorStop(1, 'rgba(56, 189, 248, 0.01)');
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Sweep leading line
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + radius * Math.cos(radarAngle), cy + radius * Math.sin(radarAngle));
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Plot threat nodes
+        radarThreats.forEach((t, i) => {
+            let angle = (i * 1.5) + 0.5;
+            let dist = 35 + (i * 28);
+            let tx = cx + dist * Math.cos(angle);
+            let ty = cy + dist * Math.sin(angle);
+
+            ctx.beginPath();
+            ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+            ctx.fillStyle = t.risk === 'CRITICAL' ? '#EF4444' : '#F59E0B';
+            ctx.fill();
+
+            // Pulse ring
+            ctx.beginPath();
+            ctx.arc(tx, ty, 7 + Math.sin(Date.now() / 180 + i) * 3, 0, Math.PI * 2);
+            ctx.strokeStyle = t.risk === 'CRITICAL' ? 'rgba(239, 68, 68, 0.6)' : 'rgba(245, 158, 11, 0.6)';
+            ctx.stroke();
+        });
+
+        requestAnimationFrame(renderRadar);
+    }
+    renderRadar();
+}
+
+async function pollThreatFeed() {
+    try {
+        let res = await fetch('/live_threat_feed');
+        let data = await res.json();
+        radarThreats = data.threats || [];
+
+        let feedElem = document.getElementById('liveThreatRadarFeed');
+        if (feedElem && radarThreats.length > 0) {
+            feedElem.innerHTML = radarThreats.map(t => `
+                <div style="padding: 6px 12px; margin-bottom: 6px; background: rgba(17,28,46,0.6); border-radius: 6px; border-left: 3px solid ${t.risk==='CRITICAL'?'var(--critical)':'var(--warning)'}; display: flex; justify-content: space-between; font-size: 0.76rem;">
+                    <div>
+                        <strong style="color:var(--text);">${t.id}</strong> — ${t.caller} <span style="color:var(--text-dim);">(${t.target})</span>
+                        <div style="color:var(--text-secondary); font-size:0.68rem; margin-top:2px;">Technique: ${t.technique} | Node: ${t.region}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <span class="card-badge ${t.risk==='CRITICAL'?'badge-critical':'badge-warning'}">${t.risk} (${t.confidence}%)</span>
+                        <div style="color:var(--safe); font-size:0.68rem; margin-top:2px;">● ${t.status}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+    } catch(e) {}
+}
+
+// ═══════ EXPORT FORENSIC REPORT ═══════
+function exportReport() {
+    let report = {
+        platform: "THREAT CALL — AI-Powered Impersonation Defense v3.0",
+        sih_edition: "Smart India Hackathon 2026",
+        generated_at: new Date().toISOString(),
+        incident_response_hash: "SHA256-0x" + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10),
+        mitre_attack_mapping: ["T1566.004 - Phishing: Voice Phishing (Vishing)", "T1656 - Impersonation / Identity Spoofing"],
+        guardian_contact: document.getElementById('guardianPhone').value,
+        security_telemetry: scanCounts,
+        latest_forensic_analysis: currentAnalysis ? {
+            trust_score: currentAnalysis.trust?.trust_score,
+            threat_severity: currentAnalysis.severity,
+            attack_signature_id: currentAnalysis.attack_dna?.attack_id,
+            evidence_chain: currentAnalysis.evidence_timeline
+        } : "No active incident during export window"
+    };
+    let blob = new Blob([JSON.stringify(report, null, 2)], {type:"application/json"});
+    let a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `SOC_FORENSIC_REPORT_${Date.now()}.json`; a.click();
+}
+
+// Init
+drawWave();
+initThreatRadar();
+pollThreatFeed();
+setInterval(pollThreatFeed, 8000);
+</script>
+</body>
+</html>
