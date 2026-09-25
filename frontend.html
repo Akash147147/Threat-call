@@ -687,6 +687,7 @@
 // ═══════ NAVIGATION ═══════
 let currentAnalysis = null;
 let scanCounts = { safe: 0, threats: 0, warnings: 0, scans: 0 };
+let analysisAudioFile = null;
 
 function showPage(pageId) {
     document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
@@ -720,10 +721,11 @@ function loadPreset(type) {
 async function runFullAnalysis() {
     let fileInput = document.getElementById('audioFileInput');
     let transcript = document.getElementById('voiceTranscript').value;
-    if (fileInput.files.length === 0) { alert("Please select a .wav audio file."); return; }
+    let audioFile = analysisAudioFile || fileInput.files[0];
+    if (!audioFile) { alert("Please select or generate a .wav audio file."); return; }
 
     let form = new FormData();
-    form.append("file", fileInput.files[0]);
+    form.append("file", audioFile, audioFile.name);
     form.append("transcript", transcript);
 
     let resultCard = document.getElementById('voiceResultCard');
@@ -1265,11 +1267,20 @@ async function triggerSOS(service) {
 }
 
 // ═══════ AUDIO PLAYGROUND & BIOMETRICS ═══════
-function playAudioSample(sampleType) {
+async function playAudioSample(sampleType) {
     let player = document.getElementById('audioSamplePlayer');
-    player.src = `/sample_audio/${sampleType}?t=` + Date.now();
-    player.style.display = 'block';
-    player.play();
+    try {
+        let response = await fetch(`/sample_audio/${sampleType}?t=` + Date.now());
+        if (!response.ok) throw new Error('Sample audio could not be loaded.');
+        let blob = await response.blob();
+        analysisAudioFile = new File([blob], `${sampleType}.wav`, { type: 'audio/wav' });
+        player.src = URL.createObjectURL(blob);
+        player.style.display = 'block';
+        document.getElementById('audioFileName').textContent = `Loaded: ${analysisAudioFile.name}`;
+        await player.play();
+    } catch (error) {
+        document.getElementById('voiceDetailedResults').innerHTML = `<div class="text-critical">${error.message}</div>`;
+    }
 }
 
 async function verifyBiometrics() {
